@@ -179,3 +179,14 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Node
+# Any node stuff
+.node_modules/
+
+# CodeKit
+.config.codekit3
+package-lock.json
+postcss.config.mjs
+
+.DS_Store

@@ -66,7 +66,6 @@ def predict(model: dict, features: dict[str, float]) -> float:
 
 
 def out_of_range(model: dict, features: dict[str, float]) -> list[str]:
-    """Features the model uses whose value lies outside its optional "ranges"."""
     ranges = model.get("ranges") or {}
     outside = []
     for name in model["coefficients"]:
