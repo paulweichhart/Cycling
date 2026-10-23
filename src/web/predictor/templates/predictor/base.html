@@ -1,3 +1,4 @@
+{% load tailwind_cli %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -5,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>{% block title %}Cycling VO2max{% endblock %}</title>
+  {% tailwind_css %}
 </head>
 <body class="min-h-screen bg-[#f5f5f7] font-sans text-zinc-900 antialiased dark:bg-black dark:text-zinc-100">
   {% block content %}{% endblock %}

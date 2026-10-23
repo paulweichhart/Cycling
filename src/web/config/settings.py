@@ -20,7 +20,10 @@ ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").sp
 INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "predictor",
+    "django_tailwind_cli",
 ]
+
+STATICFILES_DIRS = [BASE_DIR / "assets"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
