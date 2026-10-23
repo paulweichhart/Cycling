@@ -1,0 +1,156 @@
+{% extends "predictor/base.html" %}
+
+{% block content %}
+<main class="mx-auto max-w-xl px-4 py-12 sm:py-20">
+
+  <header class="mb-10 text-center sm:mb-12">
+    <h1 class="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">Estimate your Cycling VO2max.</h1>
+    <p class="mx-auto mt-4 max-w-md text-lg text-zinc-500 dark:text-zinc-400">
+      Enter the summary of a ride from your Apple Watch & add your estimated VO2max to Apple Health
+    </p>
+  </header>
+
+  {% if result %}
+  <section class="mb-8 rounded-3xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10 sm:p-10" aria-live="polite">
+    {% if result.vo2max is not None %}
+      <p class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Estimated VO2max</p>
+      <p class="mt-2 text-7xl font-semibold tracking-tight tabular-nums">{{ result.vo2max }}</p>
+      <p class="mt-1 text-zinc-500 dark:text-zinc-400">
+        mL/kg/min{% if result.mae %} <span class="whitespace-nowrap">· ± {{ result.mae }} typical error</span>{% endif %}
+      </p>
+      {% if result.outside %}
+        <p class="mx-auto mt-5 max-w-sm rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
+          Your {{ result.outside|join:", " }} lies outside the training data, so treat this estimate with a grain of salt.
+        </p>
+      {% endif %}
+    {% else %}
+      <p class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Estimated mean power</p>
+      <p class="mt-2 text-7xl font-semibold tracking-tight tabular-nums">{{ result.power }}</p>
+      <p class="mt-1 text-zinc-500 dark:text-zinc-400">watts</p>
+    {% endif %}
+
+    <dl class="mt-8 grid grid-cols-3 divide-x divide-zinc-200 border-t border-zinc-200 pt-6 dark:divide-zinc-800 dark:border-zinc-800">
+      <div>
+        <dt class="text-xs text-zinc-500">Power</dt>
+        <dd class="mt-1 text-lg font-semibold tabular-nums">{{ result.power }} <span class="text-sm font-normal text-zinc-500">W</span></dd>
+      </div>
+      <div>
+        <dt class="text-xs text-zinc-500">Power / kg</dt>
+        <dd class="mt-1 text-lg font-semibold tabular-nums">{{ result.power_per_kg }} <span class="text-sm font-normal text-zinc-500">W/kg</span></dd>
+      </div>
+      <div>
+        <dt class="text-xs text-zinc-500">Avg. speed</dt>
+        <dd class="mt-1 text-lg font-semibold tabular-nums">{{ result.speed }} <span class="text-sm font-normal text-zinc-500">{{ result.speed_unit }}</span></dd>
+      </div>
+    </dl>
+  </section>
+  {% endif %}
+
+  {% if model_error %}
+  <div class="mb-8 rounded-2xl bg-white px-5 py-4 text-sm text-zinc-600 shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-white/10">
+    {{ model_error }}
+  </div>
+  {% endif %}
+
+  {# data-units drives which unit labels and height inputs are visible (group/units variants) #}
+  <form method="post" novalidate class="group/units space-y-8" data-units="{{ units }}">
+    {% csrf_token %}
+
+    <fieldset class="flex justify-center">
+      <legend class="sr-only">Units</legend>
+      <div class="grid w-56 grid-cols-2 gap-1 rounded-full bg-zinc-200/70 p-1 dark:bg-zinc-800">
+        {% for radio in form.units %}
+          <label class="cursor-pointer">
+            {{ radio.tag }}
+            <span class="block rounded-full py-1.5 text-center text-sm font-medium text-zinc-600 transition peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-[#0071e3] dark:text-zinc-400 dark:peer-checked:bg-zinc-600 dark:peer-checked:text-white">{{ radio.choice_label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    {% if form.non_field_errors %}
+      <div class="rounded-2xl bg-red-50 px-5 py-4 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">
+        {{ form.non_field_errors.0 }}
+      </div>
+    {% endif %}
+
+    <section>
+      <h2 class="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">About you</h2>
+      <div class="space-y-5 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10 sm:p-6">
+        <fieldset>
+          <legend class="mb-1.5 block text-sm font-medium text-zinc-600 dark:text-zinc-400">Gender</legend>
+          <div class="grid grid-cols-2 gap-1 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
+            {% for radio in form.gender %}
+              <label class="cursor-pointer">
+                {{ radio.tag }}
+                <span class="block rounded-lg py-2 text-center text-sm font-medium text-zinc-600 transition peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-[#0071e3] dark:text-zinc-400 dark:peer-checked:bg-zinc-600 dark:peer-checked:text-white">{{ radio.choice_label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {% if form.gender.errors %}<p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.gender.errors.0 }}</p>{% endif %}
+        </fieldset>
+        {# imperial height needs two inputs: age and weight share a row, height gets a full row below #}
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 sm:group-data-[units=imperial]/units:grid-cols-2">
+          {% include "predictor/_field.html" with field=form.age unit="years" %}
+          <div class="sm:group-data-[units=imperial]/units:order-last sm:group-data-[units=imperial]/units:col-span-2">
+            {% include "predictor/_field.html" with field=form.height_cm unit="cm" class="group-data-[units=imperial]/units:hidden" %}
+            <fieldset class="hidden group-data-[units=imperial]/units:block">
+              <legend class="mb-1.5 block text-sm font-medium text-zinc-600 dark:text-zinc-400">Height</legend>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="relative">
+                  <label for="{{ form.height_ft.id_for_label }}" class="sr-only">Feet</label>
+                  {{ form.height_ft }}
+                  <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-400">ft</span>
+                </div>
+                <div class="relative">
+                  <label for="{{ form.height_in.id_for_label }}" class="sr-only">Inches</label>
+                  {{ form.height_in }}
+                  <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-400">in</span>
+                </div>
+              </div>
+              {% if form.height_ft.errors %}<p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.height_ft.errors.0 }}</p>
+              {% elif form.height_in.errors %}<p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.height_in.errors.0 }}</p>{% endif %}
+            </fieldset>
+          </div>
+          {% include "predictor/_field.html" with field=form.weight unit="kg" unit_imperial="lb" %}
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">Your ride</h2>
+      <div class="grid grid-cols-1 gap-5 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10 sm:grid-cols-2 sm:p-6">
+        {% include "predictor/_field.html" with field=form.distance unit="km" unit_imperial="mi" %}
+        {% include "predictor/_field.html" with field=form.duration %}
+        {% include "predictor/_field.html" with field=form.ascent unit="m" unit_imperial="ft" %}
+        {% include "predictor/_field.html" with field=form.mean_hr unit="bpm" %}
+      </div>
+    </section>
+
+    <details class="group rounded-3xl bg-white shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10"
+             {% if form.position.errors or form.surface.errors or form.bike_weight.errors %}open{% endif %}>
+      <summary class="flex cursor-pointer list-none items-center justify-between px-5 py-4 text-sm font-medium sm:px-6 [&::-webkit-details-marker]:hidden">
+        Bike &amp; position
+        <svg class="h-4 w-4 text-zinc-400 transition group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M7.2 14.8a.75.75 0 0 1 0-1.06L10.94 10 7.2 6.26a.75.75 0 1 1 1.06-1.06l4.27 4.27a.75.75 0 0 1 0 1.06L8.26 14.8a.75.75 0 0 1-1.06 0Z" clip-rule="evenodd"/>
+        </svg>
+      </summary>
+      <div class="grid grid-cols-1 gap-5 px-5 pb-6 sm:grid-cols-3 sm:px-6">
+        {% include "predictor/_field.html" with field=form.position %}
+        {% include "predictor/_field.html" with field=form.surface %}
+        {% include "predictor/_field.html" with field=form.bike_weight unit="kg" unit_imperial="lb" %}
+      </div>
+    </details>
+
+    <button type="submit"
+            class="w-full rounded-full bg-[#0071e3] px-6 py-3.5 text-base font-medium text-white transition hover:bg-[#0077ed] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#0071e3]/30 active:scale-[0.99]">
+      Estimate VO2max
+    </button>
+  </form>
+
+  <footer class="mt-12 space-y-2 text-center text-xs leading-relaxed text-zinc-500">
+    <p>Power is estimated from distance, time and elevation; wind and riding in a group are not accounted for.</p>
+    <p>A linear regression trained on lab tests from the Graded Incremental Test Data (Trinity College Dublin, Zenodo). Not a medical device. Nothing you enter is stored.</p>
+  </footer>
+</main>
+{% endblock %}

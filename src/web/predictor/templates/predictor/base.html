@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}Cycling VO2max{% endblock %}</title>
+</head>
+<body class="min-h-screen bg-[#f5f5f7] font-sans text-zinc-900 antialiased dark:bg-black dark:text-zinc-100">
+  {% block content %}{% endblock %}
+  <script>
+    // Switching units converts the values already entered, so nothing has to be retyped.
+    (() => {
+      const form = document.querySelector("form[data-units]");
+      const KG_PER_LB = 0.45359237, KM_PER_MI = 1.609344, M_PER_FT = 0.3048, CM_PER_IN = 2.54;
+      // field name -> [metric per imperial unit, decimals]
+      const converted = { weight: [KG_PER_LB, 1], distance: [KM_PER_MI, 2], ascent: [M_PER_FT, 0], bike_weight: [KG_PER_LB, 1] };
+      const round = (v, d) => String(Math.round(v * 10 ** d) / 10 ** d);
+  
+      function convertHeight(to) {
+        const cm = form.elements.height_cm, ft = form.elements.height_ft, inch = form.elements.height_in;
+        if (to === "imperial" && cm.value !== "") {
+          let feet = Math.floor(cm.value / CM_PER_IN / 12);
+          let inches = Math.round(cm.value / CM_PER_IN - feet * 12);
+          if (inches === 12) { feet += 1; inches = 0; }
+          ft.value = feet; inch.value = inches;
+        } else if (to === "metric" && ft.value !== "") {
+          cm.value = Math.round((Number(ft.value) * 12 + Number(inch.value || 0)) * CM_PER_IN);
+        }
+      }
+  
+      form.querySelectorAll('input[name="units"]').forEach((radio) => {
+        radio.addEventListener("change", () => {
+          const to = radio.value;
+          if (form.dataset.units === to) return;
+          for (const [name, [factor, decimals]] of Object.entries(converted)) {
+            const input = form.elements[name];
+            if (input.value !== "" && !Number.isNaN(Number(input.value))) {
+              const value = Number(input.value);
+              input.value = round(to === "imperial" ? value / factor : value * factor, decimals);
+            }
+            if (input.dataset.placeholderMetric) {
+              input.placeholder = to === "imperial" ? input.dataset.placeholderImperial : input.dataset.placeholderMetric;
+            }
+          }
+          convertHeight(to);
+          form.dataset.units = to;
+        });
+      });
+  
+      // a page rendered in imperial (after submitting) needs the imperial placeholders
+      if (form.dataset.units === "imperial") {
+        form.querySelectorAll("[data-placeholder-imperial]").forEach((el) => { el.placeholder = el.dataset.placeholderImperial; });
+      }
+    })();
+  </script>
+  {# Tailwind Play CDN: fine for development; build the CSS with the Tailwind CLI for production #}
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["-apple-system", "BlinkMacSystemFont", '"SF Pro Text"', '"Helvetica Neue"', "Helvetica", "Arial", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<div class="{{ class|default:'' }}">
+  <label for="{{ field.id_for_label }}" class="mb-1.5 block text-sm font-medium text-zinc-600 dark:text-zinc-400">{{ field.label }}</label>
+  <div class="relative">
+    {{ field }}
+    {% if unit %}
+      <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm text-zinc-400">
+        {% if unit_imperial %}
+          <span class="group-data-[units=imperial]/units:hidden">{{ unit }}</span>
+          <span class="hidden group-data-[units=imperial]/units:inline">{{ unit_imperial }}</span>
+        {% else %}{{ unit }}{% endif %}
+      </span>
+    {% endif %}
+  </div>
+  {% if field.errors %}
+    <p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ field.errors.0 }}</p>
+  {% elif field.help_text %}
+    <p class="mt-1.5 text-xs text-zinc-500">{{ field.help_text }}</p>
+  {% endif %}
+</div>
