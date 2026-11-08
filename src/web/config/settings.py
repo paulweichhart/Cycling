@@ -10,9 +10,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent  # src/web
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,cycling-api-ol1z.onrender.com").split(",")
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,cycling-api-ol1z.onrender.com,cycling.paulweichhart.com").split(",")
 # full origins, e.g. "https://vo2max.example.com", needed for the form POST behind HTTPS
-CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "cycling.paulweichhart.com").split(",") if o]
 if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):  # set by Render
     ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
 
