@@ -1,0 +1,5 @@
+fastapi
+uvicorn[standard]
+scikit-learn==1.9.1
+numpy==2.5.4
+joblib==1.6.0

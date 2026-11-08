@@ -16,40 +16,42 @@ The data is the "Graded Incremental Test Data" study (Trinity College Dublin, Ze
 - `data/utils/build_cycling_csv.py`: builds `data/cycling_tests.csv`, one row per cycling test. The user has edited that CSV by hand: it is `;`-separated and the VO2max outlier was removed. Read it with `sep=None, engine="python"`, and don't overwrite it without asking.
 - `data/utils/plot_cycling_stages.py`: matplotlib scatter plots by gender. By default it plots per-test VO2max; `--stages` plots per-stage data from `data/cycling_stages.csv`. Its default CSV paths assume the script sits in the repository root, so pass `--csv` if they no longer resolve.
 - `src/utils/power_estimation.py`: `estimate_mean_power()` / `estimate_mean_power_per_kg()` turn distance, duration, ascent and weight into watts using a physics model (climbing + rolling resistance + air drag).
-- `src/utils/linear_regression.py` and `src/training/`: the user's own training code.
-- `src/web/`: Django site (`config/` settings, `predictor/` app) styled with Tailwind via the Play CDN. It has no database and stores nothing. `config/settings.py` puts `src/` on `sys.path`, so the views import `utils.power_estimation`.
+- `src/utils/train_model.py`: the training pipeline. Self-contained: `train()` reads `data/cycling_tests.csv`, splits, one-hot encodes, fits, evaluates, keeps only the columns in its `FEATURES` list, writes `src/utils/model.bin`. Run from `src/`: `../.venv/bin/python -m utils.train_model`.
+- `src/service/`: FastAPI prediction service (`app.py`). `POST /predict` takes a metric ride summary, estimates power with `utils.power_estimation` and applies the model from `src/utils/model.bin`; `GET /health`; docs at `/docs`. Run it from `src/` so `utils` imports.
+- `src/web/`: Django site (`config/` settings, `predictor/` app), the form only: it validates, converts imperial to metric and POSTs to the service at `VO2MAX_SERVICE_URL` (default `http://127.0.0.1:8001`). No database, stores nothing. CSS is built with `django-tailwind-cli` and served by WhiteNoise in production.
+- `render.yaml`: Render Blueprint with two free web services, `cyclingml-api` and `cyclingml-web`. Custom subdomain: add it to the web service in the Render dashboard, CNAME it to `cyclingml-web.onrender.com`, and add it to `DJANGO_ALLOWED_HOSTS` / `DJANGO_CSRF_TRUSTED_ORIGINS`.
 - `build/` and `config.codekit3`: these appear to be CodeKit output and config. Edit `src/`, not `build/`.
 
 ## Commands
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install pandas openpyxl scikit-learn matplotlib django
+python3 -m venv .venv && .venv/bin/pip install pandas openpyxl scikit-learn matplotlib django django-tailwind-cli gunicorn whitenoise fastapi "uvicorn[standard]"
 .venv/bin/python data/utils/build_cycling_csv.py data/xlsx -o data/cycling_tests.csv
 .venv/bin/python data/utils/build_cycling_csv.py data/xlsx --stages -o data/cycling_stages.csv
 .venv/bin/python data/utils/plot_cycling_stages.py --csv data/cycling_tests.csv [--x age] [-o out.png]
-cd src/web && ../../.venv/bin/python manage.py runserver   # http://127.0.0.1:8000
+cd src && ../.venv/bin/python -m utils.train_model                       # train, writes src/utils/model.bin
+cd src && ../.venv/bin/uvicorn service.app:app --port 8001 --reload   # API, http://127.0.0.1:8001/docs
+cd src/web && ../../.venv/bin/python manage.py runserver               # page, http://127.0.0.1:8000
 ```
 
-## Model contract (web ↔ training)
+## Model contract (service ↔ training)
 
-`src/web/predictor/ml.py` reads `src/web/predictor/model.json` on every request, so there's no need to restart the server after a new export. The file has this format:
+`src/service/app.py` loads `src/utils/model.bin` (override with `VO2MAX_MODEL_PATH`) and reloads it when the file changes, so no restart is needed after a new export. It is a joblib dump of `(dv, model)`: a fitted `DictVectorizer` and the regression. The service does no training. For Render, commit `model.bin`.
 
-```json
-{"intercept": number, "coefficients": {feature: number}, "mae": number (optional), "ranges": {feature: [min, max]} (optional)}
-```
+The service passes `dv.transform` a dict with these keys, in the same names and units as `cycling_tests.csv`. `dv` ignores keys it wasn't fit on, so any subset works:
 
-Allowed feature names, in the same units as `cycling_tests.csv`:
-
-| Feature | Unit |
+| Feature | Value |
 |---|---|
-| `male` | 1 or 0 |
+| `gender` | `"F"` or `"M"` (one-hot encoded by `dv`) |
 | `age` | years |
 | `height` | m |
 | `weight` | kg |
 | `mean_hr` | bpm |
 | `mean_power_per_kg` | W/kg |
 
-Without `model.json`, the page shows only the estimated power, plus a notice. The view computes `mean_power_per_kg` with `power_estimation.estimate_mean_power`, and `web/config/settings.py` adds the repo root to `sys.path` so that import works.
+Without `model.bin`, `/predict` returns the power with `vo2max: null` and a notice, which the page shows.
+
+`utils.train_model.FEATURES` selects the training columns, so other CSV columns (`test_id`, `hrmax`, `hr_rest`) are ignored without being deleted. Keep it in sync with this table.
 
 Features must be things a user can enter after a ride (no power meter, no time series). Don't add lab-only measurements (stage VO2, lactate, Sheet3 threshold metrics).
 

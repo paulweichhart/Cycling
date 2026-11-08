@@ -1,0 +1,4 @@
+django
+django-tailwind-cli
+gunicorn
+whitenoise

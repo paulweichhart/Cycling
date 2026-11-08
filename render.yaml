@@ -1,0 +1,40 @@
+# Render Blueprint: two web services from this repo (Dashboard → New → Blueprint).
+services:
+  - type: web
+    name: cyclingml-api
+    runtime: python
+    plan: free
+    rootDir: src
+    buildCommand: pip install -r service/requirements.txt
+    startCommand: uvicorn service.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.5"
+
+  - type: web
+    name: cyclingml-web
+    runtime: python
+    plan: free
+    rootDir: src/web
+    buildCommand: >-
+      pip install -r requirements.txt &&
+      python manage.py tailwind build &&
+      python manage.py collectstatic --noinput
+    startCommand: gunicorn config.wsgi --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.5"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "0"
+      # the api's public URL, e.g. https://cyclingml-api.onrender.com (asked on first deploy)
+      - key: VO2MAX_SERVICE_URL
+        sync: false
+      # comma-separated; add your custom subdomain here, e.g. vo2max.example.com
+      - key: DJANGO_ALLOWED_HOSTS
+        value: localhost
+      # e.g. https://vo2max.example.com
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        sync: false

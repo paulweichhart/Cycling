@@ -20,7 +20,6 @@ from __future__ import annotations
 
 G = 9.81  # m/s²
 
-
 def estimate_mean_power(
     distance_km: float,
     duration_min: float,
@@ -59,7 +58,6 @@ def estimate_mean_power_per_kg(distance_km: float, duration_min: float, ascent_m
                                rider_weight_kg: float, **kwargs) -> float:
     """Mean power in W/kg of rider weight, the unit of the model's mean_power_per_kg."""
     return estimate_mean_power(distance_km, duration_min, ascent_m, rider_weight_kg, **kwargs) / rider_weight_kg
-
 
 if __name__ == "__main__":
     # 40 km in 80 min (30 km/h) with 300 m of climbing, 75 kg rider

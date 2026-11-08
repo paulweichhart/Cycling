@@ -3,11 +3,11 @@
 
 Usage
 -----
-  python plot_cycling_stages.py                         # VO2max of every test against W/kg
-  python plot_cycling_stages.py --x age                 # VO2max against any per-test column
-  python plot_cycling_stages.py --stages                # every stage: VO2 against power
-  python plot_cycling_stages.py --stages --y hr         # every stage: heart rate against power
-  python plot_cycling_stages.py -o plot.png             # save instead of showing
+  python3 exploratory_data_analysis.py                         # VO2max of every test against W/kg
+  python3 exploratory_data_analysis.py --x age                 # VO2max against any per-test column
+  python3 exploratory_data_analysis.py --stages                # every stage: VO2 against power
+  python3 exploratory_data_analysis.py --stages --y hr         # every stage: heart rate against power
+  python3 exploratory_data_analysis.py -o plot.png             # save instead of showing
 
 The default view shows one point per test (data/cycling_tests.csv), so each
 VO2max appears once. --stages shows one point per stage (data/cycling_stages.csv).
@@ -53,6 +53,19 @@ GROUPS = {
     "F": {"label": "Female", "color": "#eb6e1f", "marker": "^"},
 }
 
+def explore_data(data, column):
+  print(len(data))
+  print(data.head())
+  
+  # plt.figure(figsize=(6, 4))
+  
+  # sns.histplot(data[column], bins=40, color='black', alpha=1)
+  # plt.xlabel(column)
+  # plt.title(column)
+  
+  # plt.show()
+  
+  print(f"min: {data[column].min()} max: {data[column].max()}")
 
 def scatter(df: pd.DataFrame, x: str, y: str, labels: dict, per_stage: bool, title: str):
     fig, ax = plt.subplots(figsize=(9, 6))
@@ -80,7 +93,6 @@ def scatter(df: pd.DataFrame, x: str, y: str, labels: dict, per_stage: bool, tit
     ax.legend(frameon=False)
     fig.tight_layout()
     return fig
-
 
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description="Plot the cycling tests by gender.")
@@ -114,7 +126,6 @@ def main(argv=None) -> None:
         print(f"saved: {args.output}")
     else:
         plt.show()
-
 
 if __name__ == "__main__":
     main()

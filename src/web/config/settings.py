@@ -4,18 +4,21 @@ The page has no database: the form is evaluated and shown, nothing is stored.
 For production set DJANGO_SECRET_KEY, DJANGO_DEBUG=0 and DJANGO_ALLOWED_HOSTS.
 """
 import os
-import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent  # src/web
-SRC_DIR = BASE_DIR.parent                          # src
-
-# makes the shared packages in src/ importable, e.g. utils.power_estimation
-sys.path.insert(0, str(SRC_DIR))
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+# full origins, e.g. "https://vo2max.example.com", needed for the form POST behind HTTPS
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
+if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):  # set by Render
+    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
+
+# the FastAPI service in src/service; the timeout covers a sleeping free Render instance
+VO2MAX_SERVICE_URL = os.environ.get("VO2MAX_SERVICE_URL", "http://127.0.0.1:8001")
+VO2MAX_SERVICE_TIMEOUT = float(os.environ.get("VO2MAX_SERVICE_TIMEOUT", "60"))
 
 INSTALLED_APPS = [
     "django.contrib.staticfiles",
@@ -27,6 +30,7 @@ STATICFILES_DIRS = [BASE_DIR / "assets"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -57,4 +61,5 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"  # collectstatic target, served by WhiteNoise
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
