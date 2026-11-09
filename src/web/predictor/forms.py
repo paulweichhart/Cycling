@@ -69,7 +69,7 @@ class RideForm(forms.Form):
         label="Workout time",
         help_text="As shown on the watch, e.g. 1:20:15 or 45:30",
         widget=forms.TextInput(attrs={"class": INPUT_CLASSES, "placeholder": "1:20:15",
-                                      "inputmode": "numeric", "autocomplete": "off"}),
+                                      "inputmode": "text", "autocomplete": "off"}),
     )
     ascent = forms.FloatField(label="Elevation gain", min_value=0, widget=number("350", "1150"))
     mean_hr = forms.IntegerField(label="Avg. heart rate", min_value=60, max_value=220,
