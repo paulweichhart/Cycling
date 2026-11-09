@@ -19,7 +19,7 @@ The data is the "Graded Incremental Test Data" study (Trinity College Dublin, Ze
 - `src/utils/train_model.py`: the training pipeline. Self-contained: `train()` reads `data/cycling_tests.csv`, splits, one-hot encodes, fits, evaluates, keeps only the columns in its `FEATURES` list, writes `src/utils/model.bin`. Run from `src/`: `../.venv/bin/python -m utils.train_model`.
 - `src/service/`: FastAPI prediction service (`app.py`). `POST /predict` takes a metric ride summary, estimates power with `utils.power_estimation` and applies the model from `src/utils/model.bin`; `GET /health`; docs at `/docs`. Run it from `src/` so `utils` imports.
 - `src/web/`: Django site (`config/` settings, `predictor/` app), the form only: it validates, converts imperial to metric and POSTs to the service at `VO2MAX_SERVICE_URL` (default `http://127.0.0.1:8001`). No database, stores nothing. CSS is built with `django-tailwind-cli` and served by WhiteNoise in production.
-- `render.yaml`: Render Blueprint with two free web services, `cyclingml-api` and `cyclingml-web`. Custom subdomain: add it to the web service in the Render dashboard, CNAME it to `cyclingml-web.onrender.com`, and add it to `DJANGO_ALLOWED_HOSTS` / `DJANGO_CSRF_TRUSTED_ORIGINS`.
+- Deployment is on Vercel, as two projects from this repo. API: root directory `src` (entrypoint `src/index.py`, deps in `src/requirements.txt`, `src/.vercelignore` excludes `web`). Web: root directory `src/web` (`vercel.json` runs the Tailwind build and `collectstatic`). The web project needs env vars `VO2MAX_SERVICE_URL` (the API project's URL), `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` (include any custom domain). `*.vercel.app` hosts are allowed by default.
 - `build/` and `config.codekit3`: these appear to be CodeKit output and config. Edit `src/`, not `build/`.
 
 ## Commands
@@ -36,7 +36,7 @@ cd src/web && ../../.venv/bin/python manage.py runserver               # page, h
 
 ## Model contract (service ↔ training)
 
-`src/service/app.py` loads `src/utils/model.bin` (override with `VO2MAX_MODEL_PATH`) and reloads it when the file changes, so no restart is needed after a new export. It is a joblib dump of `(dv, model)`: a fitted `DictVectorizer` and the regression. The service does no training. For Render, commit `model.bin`.
+`src/service/app.py` loads `src/utils/model.bin` (override with `VO2MAX_MODEL_PATH`) and reloads it when the file changes, so no restart is needed after a new export. It is a joblib dump of `(dv, model)`: a fitted `DictVectorizer` and the regression. The service does no training. For Vercel, commit `model.bin`.
 
 The service passes `dv.transform` a dict with these keys, in the same names and units as `cycling_tests.csv`. `dv` ignores keys it wasn't fit on, so any subset works:
 

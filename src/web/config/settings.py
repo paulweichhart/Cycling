@@ -10,14 +10,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent  # src/web
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,cycling-api-ol1z.onrender.com,cycling.paulweichhart.com").split(",")
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,.vercel.app,cycling.paulweichhart.com").split(",")
 # full origins, e.g. "https://vo2max.example.com", needed for the form POST behind HTTPS
 CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "https://cycling.paulweichhart.com").split(",") if o]
-if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):  # set by Render
-    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
+# the form POST on a *.vercel.app URL needs its origin trusted too
+if os.environ.get("VERCEL_URL"):  # set by Vercel, host only
+    ALLOWED_HOSTS.append(os.environ["VERCEL_URL"])
+    CSRF_TRUSTED_ORIGINS.append("https://" + os.environ["VERCEL_URL"])
+if os.environ.get("VERCEL_PROJECT_PRODUCTION_URL"):
+    CSRF_TRUSTED_ORIGINS.append("https://" + os.environ["VERCEL_PROJECT_PRODUCTION_URL"])
 
-# the FastAPI service in src/service; the timeout covers a sleeping free Render instance
-VO2MAX_SERVICE_URL = os.environ.get("VO2MAX_SERVICE_URL", "https://cycling-api-ol1z.onrender.com")
+# the FastAPI service in src/service; the timeout covers a cold start
+VO2MAX_SERVICE_URL = os.environ.get("VO2MAX_SERVICE_URL", "http://127.0.0.1:8001")
 VO2MAX_SERVICE_TIMEOUT = float(os.environ.get("VO2MAX_SERVICE_TIMEOUT", "60"))
 
 INSTALLED_APPS = [

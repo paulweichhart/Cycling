@@ -193,3 +193,6 @@ postcss.config.mjs
 
 # Django collectstatic output
 src/web/staticfiles/
+
+# Tailwind CLI binaries (downloaded on demand)
+.django_tailwind_cli/
