@@ -35,7 +35,6 @@ MODEL_PATH = Path(os.environ.get(
 FEATURES = {
     "gender": '"F" or "M"',
     "age": "years",
-    "height": "m",
     "weight": "kg",
     "mean_hr": "bpm",
     "mean_power_per_kg": "W/kg",
@@ -80,7 +79,6 @@ def predict(ride: Ride) -> Prediction:
     features = {
         "gender": ride.gender,
         "age": ride.age,
-        "height": ride.height_cm / 100,
         "weight": ride.weight_kg,
         "mean_hr": ride.mean_hr,
         "mean_power_per_kg": power / ride.weight_kg,

@@ -35,7 +35,6 @@ def index(request):
         payload = {
             "gender": d["gender"],
             "age": d["age"],
-            "height_cm": d["height_cm"],
             "weight_kg": d["weight_kg"],
             "mean_hr": d["mean_hr"],
             "distance_km": d["distance_km"],

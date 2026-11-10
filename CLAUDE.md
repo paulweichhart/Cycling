@@ -36,7 +36,7 @@ cd src/web && ../../.venv/bin/python manage.py runserver               # page, h
 
 ## Model contract (service ↔ training)
 
-`src/service/app.py` loads `src/utils/model.bin` (override with `VO2MAX_MODEL_PATH`) and reloads it when the file changes, so no restart is needed after a new export. It is a joblib dump of `(dv, model)`: a fitted `DictVectorizer` and the regression. The service does no training. For Vercel, commit `model.bin`.
+`src/service/app.py` loads `src/utils/model.bin` (override with `VO2MAX_MODEL_PATH`) and reloads it when the file changes, so no restart is needed after a new export. It is a joblib dump of `(dv, model)`: a fitted `DictVectorizer` and a `Pipeline(StandardScaler, LinearRegression)` (the service just calls `model.predict(dv.transform(...))`, so scaling happens there automatically). The service does no training. For Vercel, commit `model.bin`.
 
 The service passes `dv.transform` a dict with these keys, in the same names and units as `cycling_tests.csv`. `dv` ignores keys it wasn't fit on, so any subset works:
 

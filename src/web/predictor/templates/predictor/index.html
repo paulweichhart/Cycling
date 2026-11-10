@@ -52,7 +52,7 @@
   </div>
   {% endif %}
 
-  {# data-units drives which unit labels and height inputs are visible (group/units variants) #}
+  {# data-units drives which unit labels are visible (group/units variants) #}
   <form method="post" novalidate class="group/units space-y-8" data-units="{{ units }}">
     {% csrf_token %}
 
@@ -89,29 +89,8 @@
           </div>
           {% if form.gender.errors %}<p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.gender.errors.0 }}</p>{% endif %}
         </fieldset>
-        {# imperial height needs two inputs: age and weight share a row, height gets a full row below #}
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 sm:group-data-[units=imperial]/units:grid-cols-2">
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {% include "predictor/_field.html" with field=form.age unit="years" %}
-          <div class="sm:group-data-[units=imperial]/units:order-last sm:group-data-[units=imperial]/units:col-span-2">
-            {% include "predictor/_field.html" with field=form.height_cm unit="cm" class="group-data-[units=imperial]/units:hidden" %}
-            <fieldset class="hidden group-data-[units=imperial]/units:block">
-              <legend class="mb-1.5 block text-sm font-medium text-zinc-600 dark:text-zinc-400">Height</legend>
-              <div class="grid grid-cols-2 gap-2">
-                <div class="relative">
-                  <label for="{{ form.height_ft.id_for_label }}" class="sr-only">Feet</label>
-                  {{ form.height_ft }}
-                  <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-400">ft</span>
-                </div>
-                <div class="relative">
-                  <label for="{{ form.height_in.id_for_label }}" class="sr-only">Inches</label>
-                  {{ form.height_in }}
-                  <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-400">in</span>
-                </div>
-              </div>
-              {% if form.height_ft.errors %}<p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.height_ft.errors.0 }}</p>
-              {% elif form.height_in.errors %}<p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.height_in.errors.0 }}</p>{% endif %}
-            </fieldset>
-          </div>
           {% include "predictor/_field.html" with field=form.weight unit="kg" unit_imperial="lb" %}
         </div>
       </div>

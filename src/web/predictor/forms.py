@@ -9,7 +9,6 @@ INPUT_CLASSES = (
     "dark:focus:bg-zinc-900"
 )
 SELECT_CLASSES = INPUT_CLASSES.replace("pr-20", "pr-10") + " appearance-none"
-NARROW_INPUT_CLASSES = INPUT_CLASSES.replace("pr-20", "pr-9")  # feet / inches side by side
 SEGMENT_CLASSES = "peer sr-only"
 
 # drag area (m²) and rolling resistance, see power_estimation.py
@@ -20,7 +19,6 @@ UNITS = [("metric", "Metric"), ("imperial", "Imperial")]
 KG_PER_LB = 0.45359237
 KM_PER_MI = 1.609344
 M_PER_FT = 0.3048
-CM_PER_IN = 2.54
 
 # form field -> (metric name in cleaned_data, metric per imperial unit, metric unit, imperial unit, metric limits)
 CONVERTED = {
@@ -29,7 +27,6 @@ CONVERTED = {
     "ascent": ("ascent_m", M_PER_FT, "m", "ft", (0, 10000)),
     "bike_weight": ("bike_weight_kg", KG_PER_LB, "kg", "lb", (3, 40)),
 }
-HEIGHT_LIMITS_CM = (120, 230)
 
 DURATION_RE = re.compile(r"^(?:(\d+):)?(\d{1,3}):(\d{2})$")
 
@@ -48,7 +45,7 @@ def _fmt(value: float) -> str:
 
 class RideForm(forms.Form):
     """Values are entered in the chosen units; clean() returns them in metric
-    (height_cm, weight_kg, distance_km, ascent_m, bike_weight_kg)."""
+    (weight_kg, distance_km, ascent_m, bike_weight_kg)."""
 
     units = forms.ChoiceField(choices=UNITS, initial="metric",
                               widget=forms.RadioSelect(attrs={"class": SEGMENT_CLASSES}))
@@ -57,11 +54,6 @@ class RideForm(forms.Form):
         widget=forms.RadioSelect(attrs={"class": SEGMENT_CLASSES}),
     )
     age = forms.IntegerField(min_value=10, max_value=100, widget=number("35", inputmode="numeric"))
-    height_cm = forms.FloatField(label="Height", required=False, widget=number("178"))
-    height_ft = forms.IntegerField(label="Feet", required=False,
-                                   widget=number("5", classes=NARROW_INPUT_CLASSES, inputmode="numeric"))
-    height_in = forms.FloatField(label="Inches", required=False,
-                                 widget=number("10", classes=NARROW_INPUT_CLASSES))
     weight = forms.FloatField(min_value=0, widget=number("72", "160"))
 
     distance = forms.FloatField(min_value=0, widget=number("40.2", "25"))
@@ -104,8 +96,6 @@ class RideForm(forms.Form):
     def clean(self):
         data = super().clean()
         imperial = data.get("units") == "imperial"
-        self._clean_height(data, imperial)
-
         for name, (metric_name, factor, metric_unit, imperial_unit, (low, high)) in CONVERTED.items():
             value = data.get(name)
             if value is None:
@@ -126,27 +116,3 @@ class RideForm(forms.Form):
                 raise forms.ValidationError(
                     f"An average speed of {shown} looks wrong. Check distance and workout time.")
         return data
-
-    def _clean_height(self, data, imperial: bool) -> None:
-        low, high = HEIGHT_LIMITS_CM
-        if imperial:
-            feet, inches = data.get("height_ft"), data.get("height_in") or 0
-            if feet is None:
-                self.add_error("height_ft", "Enter your height.")
-                return
-            if not 0 <= inches < 12:
-                self.add_error("height_in", "Inches must be between 0 and 11.")
-                return
-            cm = (feet * 12 + inches) * CM_PER_IN
-            if not low <= cm <= high:
-                self.add_error("height_ft", "Enter a height between 3 ft 11 in and 7 ft 6 in.")
-                return
-        else:
-            cm = data.get("height_cm")
-            if cm is None:
-                self.add_error("height_cm", "Enter your height.")
-                return
-            if not low <= cm <= high:
-                self.add_error("height_cm", f"Enter a height between {low} and {high} cm.")
-                return
-        data["height_cm"] = cm

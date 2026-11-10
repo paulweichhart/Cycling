@@ -4,7 +4,6 @@ from typing import Literal
 class Ride(BaseModel):
 	gender: Literal["F", "M"]
 	age: float = Field(ge=10, le=100, description="years")
-	height_cm: float = Field(ge=120, le=230)
 	weight_kg: float = Field(ge=30, le=200)
 	mean_hr: float = Field(ge=60, le=220, description="average heart rate, bpm")
 	distance_km: float = Field(ge=0.5, le=500)

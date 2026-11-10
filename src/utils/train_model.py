@@ -2,7 +2,9 @@
 
 Run from src/:  python -m utils.train_model
 
-The export is a joblib dump of (dv, model), which service/app.py loads.
+The export is a joblib dump of (dv, model), which service/app.py loads. `model` is a
+Pipeline(StandardScaler, LinearRegression), so the service scales inputs itself and the
+coefficients are per standard deviation (comparable across features).
 """
 from __future__ import annotations
 
@@ -14,6 +16,8 @@ from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = ROOT / "data" / "cycling_tests.csv"
@@ -44,7 +48,7 @@ def evaluate(y, y_pred) -> tuple[float, float]:
     return mean_squared_error(y, y_pred), r2_score(y, y_pred)
 
 
-def store_model(dv: DictVectorizer, model: LinearRegression, model_path: Path) -> None:
+def store_model(dv: DictVectorizer, model: Pipeline, model_path: Path) -> None:
     joblib.dump((dv, model), model_path)
 
 
@@ -59,12 +63,12 @@ def train(data_path: Path = DATA_PATH, model_path: Path = MODEL_PATH) -> dict:
     X_train = encode(df_train, dv, fit=True)
     X_val = encode(df_val, dv, fit=False)
 
-    model = LinearRegression()
+    model = make_pipeline(StandardScaler(), LinearRegression())
     model.fit(X_train, df_train[TARGET].values)
 
     mse, r2 = evaluate(df_val[TARGET].values, model.predict(X_val))
     store_model(dv, model, model_path)
-    coef = dict(zip(dv.get_feature_names_out(), model.coef_.round(3)))
+    coef = dict(zip(dv.get_feature_names_out(), model[-1].coef_.round(3)))
 
     return { "mse": mse, "r2": r2, "coef": coef }
 

@@ -14,22 +14,10 @@
     // Switching units converts the values already entered, so nothing has to be retyped.
     (() => {
       const form = document.querySelector("form[data-units]");
-      const KG_PER_LB = 0.45359237, KM_PER_MI = 1.609344, M_PER_FT = 0.3048, CM_PER_IN = 2.54;
+      const KG_PER_LB = 0.45359237, KM_PER_MI = 1.609344, M_PER_FT = 0.3048;
       // field name -> [metric per imperial unit, decimals]
       const converted = { weight: [KG_PER_LB, 1], distance: [KM_PER_MI, 2], ascent: [M_PER_FT, 0], bike_weight: [KG_PER_LB, 1] };
       const round = (v, d) => String(Math.round(v * 10 ** d) / 10 ** d);
-  
-      function convertHeight(to) {
-        const cm = form.elements.height_cm, ft = form.elements.height_ft, inch = form.elements.height_in;
-        if (to === "imperial" && cm.value !== "") {
-          let feet = Math.floor(cm.value / CM_PER_IN / 12);
-          let inches = Math.round(cm.value / CM_PER_IN - feet * 12);
-          if (inches === 12) { feet += 1; inches = 0; }
-          ft.value = feet; inch.value = inches;
-        } else if (to === "metric" && ft.value !== "") {
-          cm.value = Math.round((Number(ft.value) * 12 + Number(inch.value || 0)) * CM_PER_IN);
-        }
-      }
   
       form.querySelectorAll('input[name="units"]').forEach((radio) => {
         radio.addEventListener("change", () => {
@@ -45,7 +33,6 @@
               input.placeholder = to === "imperial" ? input.dataset.placeholderImperial : input.dataset.placeholderMetric;
             }
           }
-          convertHeight(to);
           form.dataset.units = to;
         });
       });
