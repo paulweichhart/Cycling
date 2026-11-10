@@ -57,10 +57,11 @@ def train(data_path: Path = DATA_PATH, model_path: Path = MODEL_PATH,
     data = data.dropna(subset=FEATURES + [TARGET]).reset_index(drop=True)
     explore_data(data, TARGET)
 
+    dv = DictVectorizer(sparse=False)
     mses, r2s = [], []
     for df_train_idx, df_val_idx in KFold(n_splits=n_splits, shuffle=True, random_state=seed).split(data):
         df_train, df_val = data.iloc[df_train_idx], data.iloc[df_val_idx]
-        dv = DictVectorizer(sparse=False)
+        
         X_train = encode(df_train, dv, fit=True)
         X_val = encode(df_val, dv, fit=False)
 
@@ -70,7 +71,6 @@ def train(data_path: Path = DATA_PATH, model_path: Path = MODEL_PATH,
         mses.append(mse)
         r2s.append(r2)
 
-    dv = DictVectorizer(sparse=False)
     X = encode(data, dv, fit=True)
     model = make_model()
     model.fit(X, data[TARGET].values)
