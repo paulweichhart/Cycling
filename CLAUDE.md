@@ -44,7 +44,6 @@ The service passes `dv.transform` a dict with these keys, in the same names and 
 |---|---|
 | `gender` | `"F"` or `"M"` (one-hot encoded by `dv`) |
 | `age` | years |
-| `height` | m |
 | `weight` | kg |
 | `mean_hr` | bpm |
 | `mean_power_per_kg` | W/kg |

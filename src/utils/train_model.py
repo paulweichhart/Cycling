@@ -21,7 +21,7 @@ MODEL_PATH = Path(__file__).resolve().parent / "model.bin"
 TARGET = "vo2max"
 
 # columns the model is trained on; every other column (test_id, hrmax, hr_rest, ...) is ignored
-FEATURES = ["gender", "age", "height", "weight", "mean_hr", "mean_power_per_kg"]
+FEATURES = ["gender", "age", "weight", "mean_hr", "mean_power_per_kg"]
 
 def explore_data(data: pd.DataFrame, column: str) -> None:
     print(len(data))
