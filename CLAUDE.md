@@ -8,7 +8,7 @@ This is an example repository for an ML course. The goal is a linear regression 
 
 The user trains the model themselves to learn. Do not write training code or train models unless explicitly asked.
 
-The data is the "Graded Incremental Test Data" study (Trinity College Dublin, Zenodo). The repository is not under git and has no tests or lint config.
+The data is the "Graded Incremental Test Data" study (Trinity College Dublin, Zenodo). The repository is under git (branch `main`) and has no tests or lint config.
 
 ## Layout
 
@@ -16,7 +16,7 @@ The data is the "Graded Incremental Test Data" study (Trinity College Dublin, Ze
 - `data/utils/build_cycling_csv.py`: builds `data/cycling_tests.csv`, one row per cycling test. The user has edited that CSV by hand: it is `;`-separated and the VO2max outlier was removed. Read it with `sep=None, engine="python"`, and don't overwrite it without asking.
 - `data/utils/plot_cycling_stages.py`: matplotlib scatter plots by gender. By default it plots per-test VO2max; `--stages` plots per-stage data from `data/cycling_stages.csv`. Its default CSV paths assume the script sits in the repository root, so pass `--csv` if they no longer resolve.
 - `src/utils/power_estimation.py`: `estimate_mean_power()` / `estimate_mean_power_per_kg()` turn distance, duration, ascent and weight into watts using a physics model (climbing + rolling resistance + air drag).
-- `src/utils/train_model.py`: the training pipeline. Self-contained: `train()` reads `data/cycling_tests.csv`, splits, one-hot encodes, fits, evaluates, keeps only the columns in its `FEATURES` list, writes `src/utils/model.bin`. Run from `src/`: `../.venv/bin/python -m utils.train_model`.
+- `src/utils/train_model.py`: the training pipeline. Self-contained: `train()` reads `data/cycling_tests.csv`, keeps only the columns in its `FEATURES` list, splits 60/20/20 (train/validation/test) with `train_test_split`, one-hot encodes with `DictVectorizer`, fits a `Pipeline(StandardScaler, LinearRegression)` on the training part and writes `src/utils/model.bin`. It returns `{"mse", "r2", "coef"}` scored on the validation part, where `mse` is an RMSE (the square root of the MSE) and `coef` is per standard deviation. Run from `src/`: `../.venv/bin/python -m utils.train_model`.
 - `src/service/`: FastAPI prediction service (`app.py`). `POST /predict` takes a metric ride summary, estimates power with `utils.power_estimation` and applies the model from `src/utils/model.bin`; `GET /health`; docs at `/docs`. Run it from `src/` so `utils` imports.
 - `src/web/`: Django site (`config/` settings, `predictor/` app), the form only: it validates, converts imperial to metric and POSTs to the service at `VO2MAX_SERVICE_URL` (default `http://127.0.0.1:8001`). No database, stores nothing. CSS is built with `django-tailwind-cli` and served by WhiteNoise in production.
 - Deployment is on Vercel, as two projects from this repo. API: root directory `src` (entrypoint `src/index.py`, deps in `src/requirements.txt`, `src/.vercelignore` excludes `web`). Web: root directory `src/web` (`vercel.json` runs the Tailwind build and `collectstatic`). The web project needs env vars `VO2MAX_SERVICE_URL` (the API project's URL), `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` (include any custom domain). `*.vercel.app` hosts are allowed by default.
