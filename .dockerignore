@@ -1,0 +1,8 @@
+.git
+.venv
+.nova
+.DS_Store
+**/__pycache__
+data
+build
+src/web
