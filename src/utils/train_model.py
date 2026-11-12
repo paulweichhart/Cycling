@@ -15,6 +15,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.feature_extraction import DictVectorizer
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
@@ -32,6 +33,7 @@ FEATURES = ["gender", "age", "weight", "mean_hr", "mean_power_per_kg"]
 def explore_data(data: pd.DataFrame, column: str) -> None:
     print(len(data))
     print(data.head())
+    print(data[FEATURES].isna().sum())
     print(f"min: {data[column].min()} max: {data[column].max()}")
     
 def split_data(data: pd.DataFrame, seed: int = 42):
@@ -54,21 +56,21 @@ def store_model(dv: DictVectorizer, model: Pipeline, model_path: Path) -> None:
 
 
 def make_model() -> Pipeline:
-    return make_pipeline(StandardScaler(), LinearRegression())
+    return make_pipeline(SimpleImputer(strategy="median"), StandardScaler(), LinearRegression())
 
 
-def train(data_path: Path = DATA_PATH, model_path: Path = MODEL_PATH,
-          n_splits: int = 5, seed: int = 42) -> dict:
+def train(data_path: Path = DATA_PATH,
+    model_path: Path = MODEL_PATH) -> dict:
     data = pd.read_csv(data_path, sep=None, engine="python")
-    data = data.dropna(subset=FEATURES + [TARGET]).reset_index(drop=True)
     explore_data(data, TARGET)
+    data = data.dropna(subset=[TARGET]).reset_index(drop=True)
 
     _, df_train, df_val, _ = split_data(data)
     dv = DictVectorizer(sparse=False)
     X_train = encode(df_train, dv, fit=True)
     X_val = encode(df_val, dv, fit=False)
     
-    model = make_pipeline(StandardScaler(), LinearRegression())
+    model = make_model()
     model.fit(X_train, df_train[TARGET].values)
     store_model(dv, model, model_path)
     
