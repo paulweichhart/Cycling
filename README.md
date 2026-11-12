@@ -40,3 +40,10 @@ For GradientBoostingRegressor, RandomForestRegressor & DecisionTreeRegressor, di
 
 ## Experience
 Since `POST` onto a web service isn't fun or a great experience, Claude supported me in providing a web form using Python Django. The form is hosted on Vercel and available at: http://cycling.paulweichhart.com
+
+
+## Docker
+
+Docker File & ignore have been added — use the following commands for building & running:
+`docker build -t cyclingapi`
+`docker run --rm -p 8080:8080 cyclingapi`
